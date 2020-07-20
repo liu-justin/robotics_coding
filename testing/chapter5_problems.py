@@ -47,9 +47,4 @@ def testingJacobianWithExample():
     # print(FK_body)
 testingJacobianWithExample()
 
-def problem5_1():
-    omega_z = 1 # rad/s about the z axis
-    # does not rotate about the x/y axis
-
-    v_x = 1 + cos(omega_z*t)
-    v_y = 1 - sin(omega_z*t)
+# most stuff is in the notebook

@@ -141,6 +141,9 @@ def exp_coord6_extraction(exp6):
     screwaxis = exp6/theta
     return (screwaxis, theta)
 
+def twist_extraction(twist):
+    exp_coord6_extraction(twist)
+
 # se3 is set of all 4x4 matrices of form skewed omega and v
 # matrix exponential of se3 is just the left side in Prop 3.25
 def matrixExp_to_transf(*args): 
