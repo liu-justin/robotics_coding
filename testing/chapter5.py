@@ -14,7 +14,7 @@ def jacobian_space(screwSpaceList, thetaList):
         column = np.array([np.dot(ch3.adjoint(scalingMatrixExp),screw)])
         jacobian = np.append(jacobian, np.transpose(column), axis=1)
 
-        matrixExp = ch3.matrixExp_to_transf(screw, theta)
+        matrixExp = ch3.matrixExp_to_transf_matrix(screw, theta)
         scalingMatrixExp = np.dot(scalingMatrixExp, matrixExp)
 
     jacobian = np.delete(jacobian,0,axis=1)
@@ -33,7 +33,7 @@ def jacobian_body(screwBodyList, thetaList):
         column = np.array([np.dot(ch3.adjoint(scalingMatrixExp),screw)])
         jacobian = np.append(np.transpose(column), jacobian, axis=1)
 
-        matrixExp = ch3.matrixExp_to_transf(screw, -1* theta)
+        matrixExp = ch3.matrixExp_to_transf_matrix(screw, -1* theta)
         scalingMatrixExp = np.dot(scalingMatrixExp, matrixExp)
 
     jacobian = np.delete(jacobian,len(screwBodyList)-1,axis=1)
