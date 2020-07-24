@@ -10,7 +10,7 @@ def forward_kinematics_in_body(M, screwBodyList, thetaList):
         end_effector_frame = np.dot(matrixExp, end_effector_frame)
     
     end_effector_frame = np.dot(M, end_effector_frame)
-    return np.round(end_effector_frame,5)
+    return np.round(end_effector_frame,10)
 
 def forward_kinematics_in_space(M, screwSpaceList, thetaList):
     end_effector_frame = M

@@ -36,7 +36,7 @@ def exp_coord3_extraction(exp3):
         theta about the omega_hat 
     """
     theta = np.sqrt(exp3.dot(exp3))
-    omega_hat = exp3/theta
+    omega_hat = np.round(exp3/theta,10)
     return (omega_hat, theta)
 
 def so3_to_rotation_matrix(so3matrix):
@@ -65,9 +65,9 @@ def omegatheta_to_rotation_matrix(omega, theta):
 
     return first+second+third
     
-def rotation_matrix_to_exp_coord3(R):
+def rotation_matrix_to_so3(R):
     if ((R==np.identity(3)).all()):
-        return ("undefined", 0)
+        return (0, "undefined")
     elif (np.trace(R)==-1):
         try:
             omega = 1/math.sqrt(2*(1+R[2][2]))*np.array([R[0][2], R[1][2], 1+R[2][2]])
@@ -76,11 +76,11 @@ def rotation_matrix_to_exp_coord3(R):
                 omega = 1/math.sqrt(2*(1+R[1][1]))*np.array([R[0][1], 1+R[1][1], R[2][1]])
             except:
                 omega = 1/math.sqrt(2*(1+R[0][0]))*np.array([1+R[0][0], R[1][0], 1+R[2][0]])
-        return (omega, np.pi)
+        return (np.pi, vector3_to_so3(omega))
     else:
         theta = math.acos((np.trace(R)-1)/2)
         omegahat = (R-np.transpose(R))/(2*math.sin(theta))
-        return (theta, so3_to_vector3(omegahat))
+        return (theta, omegahat)
 
 def Rp_to_transf_matrix(R,p):
     addedCol = np.c_[R, p]
@@ -123,7 +123,9 @@ def qsh_to_screwaxis(q,s,h):
 # exponential coordinates (6) is the screw axis * theta, which is a twist
 def exp_coord6_extraction(exp6):
     theta = np.sqrt(exp6.dot(exp6))
-    screwaxis = exp6/theta
+    print(theta)
+    print(exp6)
+    screwaxis = np.round(exp6/theta,10)
     return (screwaxis, theta)
 
 def twist_extraction(twist):
@@ -145,9 +147,9 @@ def matrixExp_to_transf_matrix(*args):
     # print(f"v: \n{v}")
     skewed_omega = vector3_to_so3(omega)
     upleft = omegatheta_to_rotation_matrix(omega, theta)
-    # print(f"upleft: \n{upleft}")
+    print(f"upleft: \n{upleft}")
     upright = np.dot(theta*np.identity(3) + (1-math.cos(theta))*skewed_omega + (theta-math.sin(theta))*np.dot(skewed_omega, skewed_omega), v)
-    # print(f"upright: \n{upright}")
+    print(f"upright: \n{upright}")
     top = np.append(upleft, np.transpose(np.array([upright])), axis=1)
     return np.append(top, np.array([[0,0,0,1]]), axis=0)
 
@@ -155,20 +157,27 @@ def magnitude(vector):
     # returns the magnitude of any sized vector
     return math.sqrt(vector.dot(vector))
 
-def transf_matrix_to_exp_coord6(T):
+def transf_matrix_to_se3(T):
     (R,p) = transf_matrix_to_Rp(T)
     if ((R==np.identity(3)).all()):
         omega = 0
         v = p/magnitude(p)
         theta = magnitude(p)
 
+        return (np.append(omega, v, axis=1), theta)
+
     else:
-        (theta, omega) = rotation_matrix_to_exp_coord3(R)
-        skewed_omega = vector3_to_so3(omega)
+        (theta, skewed_omega) = rotation_matrix_to_so3(R)
+        print(f"this is theta: {theta}")
+        print(f"this is skewed omega: {skewed_omega}")
         G_inverse = np.identity(3)/theta - skewed_omega/2 + (1/theta - (1/math.tan(theta/2))/2)*np.dot(skewed_omega, skewed_omega)
         v = np.dot(G_inverse, p)
+        print(v)
 
-    return (np.append(omega, v, axis=0), theta)
+        top = np.append(skewed_omega, np.transpose(np.array([v])), axis=1)
+        full = np.append(top, np.array([[0,0,0,0]]), axis=0)
+
+        return (full, theta)
 
 def Ex3_48 (T, q, s, h, theta):
     screwaxis = qsh_to_screwaxis(q,s,h)
@@ -176,16 +185,16 @@ def Ex3_48 (T, q, s, h, theta):
     matrixExp = matrixExp_to_transf_matrix(S_theta)
     return np.dot(matrixExp, T)
 
-# Ra = np.array([[0,1,0],
-#                [1,0,0],
-#                [0,0,1]])
-# p = np.array([4,5,8])
+Ra = np.array([[-1,0,0],
+               [0,1,0],
+               [0,0,-1]])
+p = np.array([4,0.4,0])
 
-omega = np.array([0,0,1])
-print(vector3_to_so3(omega))
+# omega = np.array([0,0,1])
+# print(vector3_to_so3(omega))
 
-# T = Rp_to_transf_matrix(Ra, p)
-# print(f"this is the transformation matrix from Ra and p: \n{T}")
+T = Rp_to_transf_matrix(Ra, p)
+print(f"this is the transformation matrix from Ra and p: \n{T}")
 
 # (Rnew,pnew) = transf_matrix_to_Rp(T)
 # print(f"this is the above transf matrix broken back into R and p: \n{Rnew}\n{pnew}")
@@ -193,7 +202,17 @@ print(vector3_to_so3(omega))
 # T_inv = transf_matrix_inverse(T)
 # print(f"This is the transf matrix inversed: \n{T_inv}")
 
-twist = np.array([0,2,2,4,0,0])
+(se3_a, theta) = transf_matrix_to_se3(T)
+print(se3_a)
+print(f"this is expcoord6 broken down: {exp_coord3_extraction(se3_to_vector6(se3_a))}")
+
+backToT = matrixExp_to_transf_matrix(se3_a*theta)
+print(backToT)
+
+# backToT = T_inv @ T
+# print(backToT)
+
+# twist = np.array([0,2,2,4,0,0])
 # se3ed_twist = vector6_to_se3(twist)
 # print(f"this is the 6vector/twist [0,2,2,4,0,0] in se(3) form: \n{se3ed_twist}")
 # back_to_twist = se3_to_vector6(se3ed_twist)
@@ -202,12 +221,12 @@ twist = np.array([0,2,2,4,0,0])
 # # adjT = adjoint(T)
 # # print(adjT)
 
-R = np.identity(3) 
-p = np.array([0,0,0])
-T = Rp_to_transf_matrix(R,p)
-adjT = adjoint(T)
-print(adjT)
-print(np.dot(adjT, twist))
+# R = np.identity(3) 
+# p = np.array([0,0,0])
+# T = Rp_to_transf_matrix(R,p)
+# adjT = adjoint(T)
+# print(adjT)
+# print(np.dot(adjT, twist))
 
 
 # (screw1, theta1) = exp_coord6_extraction(twist)
@@ -217,14 +236,3 @@ print(np.dot(adjT, twist))
 
 # T2 = matrixExp_to_transf_matrix(np.array([0,1,0,1,0,0]), np.pi/4)
 # print(T2)
-
-# aStart = time.perf_counter()
-# a = rotationInverse(Ra)
-# aEnd = time.perf_counter()
-# print(aStart-aEnd)
-
-# bStart = time.perf_counter()
-# b = np.transpose(Ra)
-
-# bEnd = time.perf_counter()
-# print(bStart-bEnd)

@@ -7,7 +7,7 @@ import chapter5 as ch5
 def testingJacobian():
     R = np.identity(3)
     p = np.array([0,2,1])
-    M = ch3.Rp_to_transf(R,p)
+    M = ch3.Rp_to_transf_matrix(R,p)
     thetaList = [np.pi/2,np.pi/2, -1*np.pi/2, 1]
     screwSpaceAxis1 = ch3.qsh_to_screwaxis(np.array([0,0,0]), np.array([0,0,1]), 0)
     screwSpaceAxis2 = ch3.qsh_to_screwaxis(np.array([0,1,0]), np.array([0,0,1]), 0)
@@ -17,7 +17,7 @@ def testingJacobian():
     screwSpaceList = [screwSpaceAxis1, screwSpaceAxis2, screwSpaceAxis3, screwSpaceAxis4]
     screwBodyList = []
     for screwSpaceAxis in screwSpaceList:
-        screwBodyList.append(np.dot(ch3.adjoint(ch3.transf_inverse(M)), screwSpaceAxis))
+        screwBodyList.append(np.dot(ch3.adjoint(ch3.transf_matrix_inverse(M)), screwSpaceAxis))
 
     FK_space = ch5.jacobian_space(screwSpaceList, thetaList)
     print(FK_space)
