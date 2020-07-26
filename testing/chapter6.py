@@ -28,9 +28,8 @@ def IK_body(Blist, M, T, thetalist0, e_omega, e_v):
     print(ch3.magnitude(omega))
     print(ch3.magnitude(v))
     while((ch3.magnitude(omega) > e_omega or ch3.magnitude(v) > e_v) and counter < 25):
-        jacobian_b = ch5.jacobian_body(Blist, thetaList)
-        print(f"this is the jacobian, should be 6x2: {jacobian_b}")
-        thetaListaddition = np.dot(jacobian_b.T, np.reshape(scriptV_b_exp6, (-1,1)))
+        jacobian_b = np.linalg.pinv(ch5.jacobian_body(Blist, thetaList))
+        thetaListaddition = np.dot(jacobian_b, np.reshape(scriptV_b_exp6, (-1,1)))
         thetaList = [sum(i) for i in zip(thetaList,thetaListaddition.flatten().tolist())]
         # recalculate scriptV, screw and omega, and v
         T_sb = ch4.forward_kinematics_in_body(M, Blist, thetaList)

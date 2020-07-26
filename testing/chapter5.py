@@ -36,5 +36,6 @@ def jacobian_body(screwBodyList, thetaList):
         matrixExp = ch3.screwtheta_to_transf_matrix(screw, -1* theta)
         scalingMatrixExp = np.dot(scalingMatrixExp, matrixExp)
 
-    jacobian = np.delete(jacobian,len(screwBodyList)-1,axis=1)
+    # stupid, count starts at 1
+    jacobian = np.delete(jacobian,len(screwBodyList),axis=1)
     return jacobian
