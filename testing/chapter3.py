@@ -143,14 +143,10 @@ def twist_extraction(twist):
 def screwtheta_to_transf_matrix(screwaxis, theta): 
     omega = np.delete(screwaxis,[3,4,5], axis=0)
     v = np.delete(screwaxis,[0,1,2], axis=0)
-    # print(f"screwaxis: \n{screwaxis}")
-    # print(f"omega: \n{omega}")
-    # print(f"v: \n{v}")
     skewed_omega = vector3_to_so3(omega)
     upleft = omegatheta_to_rotation_matrix(omega, theta)
-    # print(f"upleft: \n{upleft}")
     upright = np.dot(theta*np.identity(3) + (1-math.cos(theta))*skewed_omega + (theta-math.sin(theta))*np.dot(skewed_omega, skewed_omega), v)
-    # print(f"upright: \n{upright}")
+
     top = np.append(upleft, np.transpose(np.array([upright])), axis=1)
     return np.append(top, np.array([[0,0,0,1]]), axis=0)
 
@@ -159,14 +155,10 @@ def se3_to_transf_matrix(se3):
     (screwaxis, theta) = exp_coord6_extraction(exp_coord6)
     omega = np.delete(screwaxis,[3,4,5], axis=0)
     v = np.delete(screwaxis,[0,1,2], axis=0)
-    # print(f"screwaxis: \n{screwaxis}")
-    # print(f"omega: \n{omega}")
-    # print(f"v: \n{v}")
     skewed_omega = vector3_to_so3(omega)
     upleft = omegatheta_to_rotation_matrix(omega, theta)
-    # print(f"upleft: \n{upleft}")
     upright = np.dot(theta*np.identity(3) + (1-math.cos(theta))*skewed_omega + (theta-math.sin(theta))*np.dot(skewed_omega, skewed_omega), v)
-    # print(f"upright: \n{upright}")
+
     top = np.append(upleft, np.transpose(np.array([upright])), axis=1)
     return np.append(top, np.array([[0,0,0,1]]), axis=0)
 
@@ -242,8 +234,8 @@ def Ex3_48 (T, q, s, h, theta):
 # backToT2 = screwtheta_to_transf_matrix(se3_to_vector6(se3_a), theta)
 # print(f"this should also be the original T: \n{backToT2}")
 
-# # backToT = T_inv @ T
-# # print(backToT)
+# backToT = T_inv @ T
+# print(backToT)
 
 # twist = np.array([1,0,0,1,2,3])
 # print(f"testing  exp6 extraction: {exp_coord6_extraction(twist)}")

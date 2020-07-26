@@ -16,7 +16,7 @@ bodyList = [bodyScrew1, bodyScrew2]
 
 thetaList0 = [0, np.pi/6]
 
-T = np.array([[-0.5, -0.866, 0, 0],
+T = np.array([[-0.5, -0.866, 0, 0.366],
               [0.866, -0.5, 0 ,1.366],
               [0,0,1,0],
               [0,0,0,1]])

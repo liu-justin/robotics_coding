@@ -19,8 +19,8 @@ def IK_body(Blist, M, T, thetalist0, e_omega, e_v):
     thetaList = thetalist0
     T_sb = ch4.forward_kinematics_in_body(M, Blist, thetaList)
     T_bs = ch3.transf_matrix_inverse(T_sb)
-    (scriptV_b, theta) = ch3.transf_matrix_to_se3(T_bs @ T)
-    scriptV_b_exp6 = ch3.se3_to_vector6(scriptV_b)
+    (scriptV_b_bracketed, theta) = ch3.transf_matrix_to_se3(T_bs @ T)
+    scriptV_b_exp6 = ch3.se3_to_vector6(scriptV_b_bracketed*theta)
     omega = scriptV_b_exp6[0:3]
     v = scriptV_b_exp6[3:6]
 
@@ -35,11 +35,12 @@ def IK_body(Blist, M, T, thetalist0, e_omega, e_v):
         # recalculate scriptV, screw and omega, and v
         T_sb = ch4.forward_kinematics_in_body(M, Blist, thetaList)
         T_bs = ch3.transf_matrix_inverse(T_sb)
-        (scriptV_b, theta) = ch3.transf_matrix_to_se3(T_bs @ T)
-        scriptV_b_exp6 = ch3.se3_to_vector6(scriptV_b)
+        (scriptV_b_bracketed, theta) = ch3.transf_matrix_to_se3(T_bs @ T)
+        scriptV_b_exp6 = ch3.se3_to_vector6(scriptV_b_bracketed*theta)
         omega = scriptV_b_exp6[0:3]
         v = scriptV_b_exp6[3:6]
-
+        omega_mag = ch3.magnitude(omega)
+        v_mag = ch3.magnitude(omega)
 
         counter += 1
 
