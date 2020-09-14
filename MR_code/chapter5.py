@@ -11,7 +11,7 @@ def jacobian_space(screwSpaceList, thetaList):
 
     for screw, theta in zip(screwSpaceList, thetaList):
         
-        column = np.array([np.dot(ch3.adjoint(scalingMatrixExp),screw)])
+        column = np.array([np.dot(ch3.adjoint_transf_matrix(scalingMatrixExp),screw)])
         jacobian = np.append(jacobian, np.transpose(column), axis=1)
 
         matrixExp = ch3.screwtheta_to_transf_matrix(screw, theta)
@@ -30,7 +30,7 @@ def jacobian_body(screwBodyList, thetaList):
 
     for screw, theta in zip(revScrewList, revThetaList):
         
-        column = np.array([np.dot(ch3.adjoint(scalingMatrixExp),screw)])
+        column = np.array([np.dot(ch3.adjoint_transf_matrix(scalingMatrixExp),screw)])
         jacobian = np.append(np.transpose(column), jacobian, axis=1)
 
         matrixExp = ch3.screwtheta_to_transf_matrix(screw, -1* theta)

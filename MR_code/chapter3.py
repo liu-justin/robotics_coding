@@ -113,7 +113,7 @@ def se3_to_vector6(matrix):
     omega = so3_to_vector3(angular)
     return np.append(omega, linear)
 
-def adjoint(T):
+def adjoint_transf_matrix(T):
     (R,p) = transf_matrix_to_Rp(T)
     p_skewed = vector3_to_so3(p)
     top_half = np.append(R, np.zeros((3,3)), axis=1)
