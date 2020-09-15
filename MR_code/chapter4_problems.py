@@ -18,7 +18,7 @@ def problem4_2():
     screwSpaceList = [screwSpaceAxis1, screwSpaceAxis2, screwSpaceAxis3, screwSpaceAxis4]
     screwBodyList = []
     for screwSpaceAxis in screwSpaceList:
-        screwBodyList.append(np.dot(ch3.adjoint(ch3.transf_matrix_inverse(M)), screwSpaceAxis))
+        screwBodyList.append(np.dot(ch3.adjoint_transf_matrix(ch3.transf_matrix_inverse(M)), screwSpaceAxis))
 
     print(screwBodyList)
 
