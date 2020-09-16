@@ -89,7 +89,11 @@ def inverse_dynamics_closedForm(thetaList, d_thetaList, dd_thetaList, g, F_tip, 
         # dVi = Ad_Ti,i-1(dVi-1) + ad_Vi(Ai)*theta_dot + A_i*theta_ddot
         Vdi[:,i+1] = np.dot(AdTi[i], Vdi[:,1]) + np.dot(adjoint_twist(Vi[:,i+1]),Ai[:,i]) * d_thetaList[i] + Ai[:,i]*dd_thetaList
 
-    # for i in range(n-1,-1,-1):
+    for i in range(n-1,-1,-1):
+        Fi = np.dot(np.array(AdTi[i]).T, Fi) + np.dot(G_list[i],Vdi[i+1]) - np.dot(np.array(adjoint_twist(Vi[:,i])).T, np.dot(G_list[i], Vi[:,i+1]))
+        tau_list[i] = np.dot(np.array(Fi).T, Ai[:, i])
+
+    return tau_list
 
 
 
