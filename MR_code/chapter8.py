@@ -20,7 +20,7 @@ def adjoint_twist(V):
     return np.append(top, bot, axis=0)
 
 def inverse_dynamics(thetaList, d_thetaList, dd_thetaList, g, fTip, MList, GList, SList):
-    forces = np.array(fTip)
+    forces = [np.array(fTip)]
     torques = []
     transfs = []
     twists = [np.array([0,0,0,0,0,0])] # first twist shouldn't be moving if arm is stationary, if attached to a wheeled platform then yeah change it
@@ -28,9 +28,9 @@ def inverse_dynamics(thetaList, d_thetaList, dd_thetaList, g, fTip, MList, GList
 
     # have to edit both for loops for i=1..n, i=n...1 (cut some lists up) hard
 
-    for (theta, dtheta, ddtheta, M, A) in zip(thetaList, d_thetaList, dd_thetaList, MList, np.transpose(SList)):
+    for (theta, dtheta, ddtheta, M, S) in zip(thetaList, d_thetaList, dd_thetaList, MList[1:], np.transpose(SList)):
         #first need to find the transf matrix T_(i+1,i) using M,A,thetaand matrix exponentials
-        print(A)
+        A = np.dot(ch3.adjoint_transf_matrix(ch3.transf_matrix_inverse(Mi)), np.array(S_list)[:,i])
         T = ch3.screwtheta_to_transf_matrix(A,theta) @ M
         V = np.dot(ch3.adjoint_transf_matrix(T),twists[-1]) + A*dtheta
         Vdot = np.dot(ch3.adjoint_transf_matrix(T), twistDots[-1]) + np.dot(adjoint_twist(V),A)*dtheta + A*ddtheta 
@@ -42,33 +42,74 @@ def inverse_dynamics(thetaList, d_thetaList, dd_thetaList, g, fTip, MList, GList
     # twists and twistDots contain the zeroth twist and twistDot, but this zip will stop at the smallest list end, so it fine
     for (twist, twistDot, G, A) in zip(twists[::-1], twistDots[::-1], GList[::-1], np.transpose(SList)[::-1]):
         #first need to find the transf matrix T_(i+1,i) using M,A,thetaand matrix exponentials
-        # something wrong here
-        force = np.dot(ch3.adjoint_transf_matrix(T),forces[0]) + np.dot(G,twistDot) - np.dot(adjoint_twist(V),(np.dot(G,twist)))
+        first = np.dot(ch3.adjoint_transf_matrix(T),forces[0])
+        second = np.dot(G,twistDot)
+        third = np.dot(adjoint_twist(V),(np.dot(G,twist)))
+        force = first+second-third
         tau = np.dot(force,A)
 
-        np.column_stack((forces,force))
+        # np.column_stack((forces,force))
+        forces.insert(0,force)
         torques.insert(0,tau)
 
     return torques
 
 def inverse_dynamics_closedForm(thetaList, d_thetaList, dd_thetaList, g, F_tip, M_list, G_list, S_list):
-    A = np.diag(S_list)
-    G = np.diag(G_list)
+    n = len(thetaList)
 
-    V_0 = np.zeros(3)
-    V_base = np.dot(ch3.adjoint_transf_matrix(M_list[0]), V_0) # its not this, what is T_10
+    # initializing the twist, and twist dot
+    Vi = np.zeros((6,n+1)) # if there are 3 joints, then there are 4 twists to find
+    Vdi = np.zeros((6,n+1))
+    # this notation [:,0] is the first column
+    Vdi[:,0] = np.r_[np.array([0,0,0]), g] # first acceleration is from gravity, although dont know why its on the first d_twist
 
-    W = np.zeros((4,4))
-    for T in M_list():
-        np.column_stack((W,ch3.adjoint_transf_matrix(T)))
+    Mi = np.identity(4)
+    Ai = np.zeros((6,n)) # this code from github and textbook seems off
+    AdTi = [[None]] * (n+1)
+    AdTi[n] = ch3.adjoint_transf_matrix(ch3.transf_matrix_inverse(M_list[n])) # no idea what this is
 
-    W = np.diag(W, -1)
+    Fi = np.array(F_tip).copy() # copy by value, no link
 
-    ad_transf = np.array([])
-    for (A, d_theta) in zip(S_list, d_thetaList):
-        np.append(ad_transf, adjoint_twist(A*d_theta))
+    tau_list = np.zeros(n) # initialize tau return list
 
-    ad_transf = np.diag(ad_transf)
+    for i in range(n): # 0 --> n-1
+        Mi = np.dot(Mi, Mlist[i]) #previous iterations dotted with current link config (this ends up being current link referenced to {0})
+        
+        # use adjoint_transf to convert a space frame screw axis Si, into screw axis of joint i in {i} Ai
+        # this is the reason Mi is counted, transf from current link i to base {0} is not in the inputs, need to keep a tracker on it
+        Ai[:,i] = np.dot(ch3.adjoint_transf_matrix(ch3.transf_matrix_inverse(Mi)), np.array(S_list)[:,i]) # Ai = Ad_(T_(i,i-1)) * Si
+
+        # Ad_Ti = Ad(e^(-A_i*theta)*M_i,i-1)
+        AdTi[i] = ch3.adjoint_transf_matrix(np.dot(ch3.se3_to_transf_matrix(ch3.vector6_to_se3(Ai[:, i]* -thetaList[i])),ch3.transf_matrix_inverse(Mlist[i])))
+
+        # Vi = Ad_Ti,i-1(Vi-1) + A_i*theta_dot
+        # editing the column with the [:,x] notation
+        #Vi[:,i+1] = np.dot(AdTi[i],Vi[:,1]) + Ai[:,1]*d_thetaList[i]
+
+        # dVi = Ad_Ti,i-1(dVi-1) + ad_Vi(Ai)*theta_dot + A_i*theta_ddot
+        Vdi[:,i+1] = np.dot(AdTi[i], Vdi[:,1]) + np.dot(adjoint_twist(Vi[:,i+1]),Ai[:,i]) * d_thetaList[i] + Ai[:,i]*dd_thetaList
+
+    # for i in range(n-1,-1,-1):
+
+
+
+    # A = np.diag(S_list)
+    # G = np.diag(G_list)
+
+    # V_0 = np.zeros(3)
+    # V_base = np.dot(ch3.adjoint_transf_matrix(M_list[0]), V_0) # its not this, what is T_10
+
+    # W = np.zeros((4,4))
+    # for T in M_list():
+    #     np.column_stack((W,ch3.adjoint_transf_matrix(T)))
+
+    # W = np.diag(W, -1)
+
+    # ad_transf = np.array([])
+    # for (A, d_theta) in zip(S_list, d_thetaList):
+    #     np.append(ad_transf, adjoint_twist(A*d_theta))
+
+    # ad_transf = np.diag(ad_transf)
 
 def mass_matrix(thetaList, MList, GList, SList):
     # pg 296, do inverse dynamics and set g=0, \theta\dot = 0 , F_tip = 0
@@ -158,5 +199,5 @@ Slist = np.array([[1, 0, 1,      0, 1,     0],
                     [0, 1, 0, -0.089, 0,     0],
                     [0, 1, 0, -0.089, 0, 0.425]]).T
 
-a = inverse_dynamics(thetalist, dthetalist, ddthetalist, g, Ftip, Mlist, Glist, Slist)
+a = inverse_dynamics_closedForm(thetalist, dthetalist, ddthetalist, g, Ftip, Mlist, Glist, Slist)
 print(a)
