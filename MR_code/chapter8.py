@@ -3,6 +3,8 @@ import chapter4 as ch4
 import chapter5 as ch5
 import chapter6 as ch6
 
+import modern_robotics_functions as mr
+
 import math
 import numpy as np
 import itertools
@@ -61,9 +63,9 @@ def inverse_dynamics_closedForm(thetaList, d_thetaList, dd_thetaList, g, F_tip, 
     Vi = np.zeros((6,n+1)) # if there are 3 joints, then there are 4 twists to find
     Vdi = np.zeros((6,n+1))
     # this notation [:,0] is the first column
-    Vdi[:,0] = np.r_[np.array([0,0,0]), g] # first acceleration is from gravity, although dont know why its on the first d_twist
+    Vdi[:,0] = np.r_[np.array([0,0,0]), -np.array(g)] # first acceleration is from gravity, although dont know why its on the first d_twist
 
-    Mi = np.identity(4)
+    Mi = np.identity(4) # for the transfer from space axis to body axis, need the transf from {0} to the joint axis {i}
     Ai = np.zeros((6,n)) # this code from github and textbook seems off
     AdTi = [[None]] * (n+1)
     AdTi[n] = ch3.adjoint_transf_matrix(ch3.transf_matrix_inverse(M_list[n])) # no idea what this is
@@ -77,20 +79,36 @@ def inverse_dynamics_closedForm(thetaList, d_thetaList, dd_thetaList, g, F_tip, 
         
         # use adjoint_transf to convert a space frame screw axis Si, into screw axis of joint i in {i} Ai
         # this is the reason Mi is counted, transf from current link i to base {0} is not in the inputs, need to keep a tracker on it
+        # Mi is T_sb, base relative to space; to convert space axis to body axis--> Ab = T_bs*S_s (need to invert Mi)
         Ai[:,i] = np.dot(ch3.adjoint_transf_matrix(ch3.transf_matrix_inverse(Mi)), np.array(S_list)[:,i]) # Ai = Ad_(T_(i,i-1)) * Si
 
-        # Ad_Ti = Ad(e^(-A_i*theta)*M_i,i-1)
-        AdTi[i] = ch3.adjoint_transf_matrix(np.dot(ch3.se3_to_transf_matrix(ch3.vector6_to_se3(Ai[:, i]* -thetaList[i])),ch3.transf_matrix_inverse(Mlist[i])))
+        # Ti = e^(-A_i*theta)*M_i,i-1 --> given Mi,i+1 in Mlist, need to invert it
+        Ti = np.dot(ch3.se3_to_transf_matrix(ch3.vector6_to_se3(Ai[:, i]* -1*thetaList[i])),ch3.transf_matrix_inverse(Mlist[i]))
+        AdTi[i] = ch3.adjoint_transf_matrix(Ti)
 
         # Vi = Ad_Ti,i-1(Vi-1) + A_i*theta_dot
-        # editing the column with the [:,x] notation
-        #Vi[:,i+1] = np.dot(AdTi[i],Vi[:,1]) + Ai[:,1]*d_thetaList[i]
+        # the [:,x] notation is editing the column, index of x
+        Vi[:,i+1] = np.dot(AdTi[i],Vi[:,i]) + Ai[:,i]*d_thetaList[i]
 
         # dVi = Ad_Ti,i-1(dVi-1) + ad_Vi(Ai)*theta_dot + A_i*theta_ddot
-        Vdi[:,i+1] = np.dot(AdTi[i], Vdi[:,1]) + np.dot(adjoint_twist(Vi[:,i+1]),Ai[:,i]) * d_thetaList[i] + Ai[:,i]*dd_thetaList
+        a = np.dot(AdTi[i], Vdi[:,i])
+        b = np.dot(adjoint_twist(Vi[:,i+1]),Ai[:,i]) * d_thetaList[i]
+        c = Ai[:,i]*dd_thetaList[i]
+        Vdi[:,i+1] = a+b+c
+
+        # Vdi[:, i + 1] = np.dot(AdTi[i], Vdi[:, i]) \
+        #                + Ai[:, i] * dd_thetaList[i] \
+        #                + np.dot(adjoint_twist(Vi[:, i + 1]), Ai[:, i]) * d_thetaList[i]
+        #Vdi[:,i+1] = np.dot(AdTi[i], Vdi[:,i]) + np.dot(adjoint_twist(Vi[:,i+1]),Ai[:,i]) * d_thetaList[i] + Ai[:,i]*dd_thetaList[i]
+    print(Vdi)
+
 
     for i in range(n-1,-1,-1):
-        Fi = np.dot(np.array(AdTi[i]).T, Fi) + np.dot(G_list[i],Vdi[i+1]) - np.dot(np.array(adjoint_twist(Vi[:,i])).T, np.dot(G_list[i], Vi[:,i+1]))
+        Fa = np.dot(np.array(AdTi[i+1]).T, Fi)
+        Fb = np.dot(G_list[i],Vdi[:,i+1])
+        Fc = np.dot(np.array(adjoint_twist(Vi[:,i+1])).T, np.dot(G_list[i], Vi[:,i+1]))
+        Fi = Fa+Fb-Fc
+        # Fi = np.dot(np.array(AdTi[i+1]).T, Fi) + np.dot(G_list[i],Vdi[:,i+1]) - np.dot(np.array(adjoint_twist(Vi[:,i])).T, np.dot(G_list[i], Vi[:,i+1]))
         tau_list[i] = np.dot(np.array(Fi).T, Ai[:, i])
 
     return tau_list
@@ -205,3 +223,6 @@ Slist = np.array([[1, 0, 1,      0, 1,     0],
 
 a = inverse_dynamics_closedForm(thetalist, dthetalist, ddthetalist, g, Ftip, Mlist, Glist, Slist)
 print(a)
+
+b = mr.InverseDynamics(thetalist, dthetalist, ddthetalist, g, Ftip, Mlist, Glist, Slist)
+print(b)
