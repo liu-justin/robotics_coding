@@ -21,7 +21,7 @@ def adjoint_twist(V):
 
     return np.append(top, bot, axis=0)
 
-# def inverse_dynamics_bad(thetaList, d_thetaList, dd_thetaList, g, fTip, MList, GList, SList):
+def inverse_dynamics_bad(thetaList, d_thetaList, dd_thetaList, g, fTip, MList, GList, SList):
     forces = [np.array(fTip)]
     torques = []
     transfs = []
