@@ -51,7 +51,6 @@ def Normalize(V):
 '''
 *** CHAPTER 3: RIGID-BODY MOTIONS ***
 '''
-
 def RollPitchYawToRot(r, p, y):
     """Creates a rotation matrix fro roll-pitch-yaw angles
     Example Input:
@@ -72,7 +71,6 @@ def RollPitchYawToRot(r, p, y):
     return np.array([[c(r)*c(p), c(r)*s(p)*s(y) - s(r)*c(y), c(r)*s(p)*c(y) + s(r)*s(y)],
                      [s(r)*c(p), s(r)*s(p)*s(y) + c(r)*c(y), s(r)*s(p)*c(y) - c(r)*s(y)],
                      [  -1*s(p),                  c(p)*s(y),                  c(p)*c(y)]])
-
 
 def RotInv(R):
     """Inverts a rotation matrix
@@ -1524,17 +1522,24 @@ def ScrewTrajectory(Xstart, Xend, Tf, N, method):
 def CartesianTrajectory(Xstart, Xend, Tf, N, method):
     """Computes a trajectory as a list of N SE(3) matrices corresponding to
     the origin of the end-effector frame following a straight line
-    :param Xstart: The initial end-effector configuration
-    :param Xend: The final end-effector configuration
-    :param Tf: Total time of the motion in seconds from rest to rest
-    :param N: The number of points N > 1 (Start and stop) in the discrete
-              representation of the trajectory
-    :param method: The time-scaling method, where 3 indicates cubic (third-
-                   order polynomial) time scaling and 5 indicates quintic
-                   (fifth-order polynomial) time scaling
-    :return: The discretized trajectory as a list of N matrices in SE(3)
-             separated in time by Tf/(N-1). The first in the list is Xstart
-             and the Nth is Xend
+
+    :param Xstart:
+        The initial end-effector configuration
+    :param Xend:
+        The final end-effector configuration
+    :param Tf:
+        Total time of the motion in seconds from rest to rest
+    :param N:
+        The number of points N ">" 1 (Start and stop) in the discrete representation of the trajectory
+    :param method:
+        The time-scaling method, where 3 indicates cubic (third-
+        order polynomial) time scaling and 5 indicates quintic
+        (fifth-order polynomial) time scaling
+    :return:
+        The discretized trajectory as a list of N matrices in SE(3)
+        separated in time by Tf/(N-1). The first in the list is Xstart
+        and the Nth is Xend
+
     This function is similar to ScrewTrajectory, except the origin of the
     end-effector frame follows a straight line, decoupled from the rotational
     motion.
