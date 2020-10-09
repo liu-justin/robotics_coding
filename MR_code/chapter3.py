@@ -169,11 +169,13 @@ def magnitude(vector):
 def transf_matrix_to_se3(T):
     (R,p) = transf_matrix_to_Rp(T)
     if ((R==np.identity(3)).all()):
-        omega = 0
+        omega = np.array([0,0,0])
         v = p/magnitude(p)
         theta = magnitude(p)
 
-        return (np.append(omega, v, axis=1), theta)
+        vec6 = np.append(omega, v)
+
+        return (vector6_to_se3(vec6), theta)
 
     else:
         (theta, skewed_omega) = rotation_matrix_to_so3(R)
