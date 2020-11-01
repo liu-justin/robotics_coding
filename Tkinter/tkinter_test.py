@@ -22,7 +22,13 @@ class singleMotorControl:
         self.btn_increase = tk.Button(master=self.frame, text="+", command=self.increase)
         self.btn_increase.grid(row=0, column=3, sticky="nsew")
 
+        self.window.bind('<KeyPress>', self.printKey)
+        self.window.bind('<Key-a>', self.decrease)
+
         self.frame.pack()
+
+    def printKey(self, e):
+        print(f"keypressed: {e}")
 
     def increase(self):
         value = int(self.label["text"])
