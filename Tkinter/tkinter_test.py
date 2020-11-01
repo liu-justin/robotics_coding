@@ -1,25 +1,59 @@
 import tkinter as tk
 
-def increase():
-    value = int(lbl_value["text"])
-    lbl_value["text"] = f"{value + 1}"
-
-def decrease():
-    value = int(lbl_value["text"])
-    lbl_value["text"] = f"{value - 1}"
-
 window = tk.Tk()
 
-window.rowconfigure(0, minsize=50, weight=1)
-window.columnconfigure([0, 1, 2], minsize=50, weight=1)
+class singleMotorControl:
+    def __init__(self, name):
+        self.name = name
+        self.frame = tk.Frame()
 
-btn_decrease = tk.Button(master=window, text="-", command=decrease)
-btn_decrease.grid(row=0, column=0, sticky="nsew")
+        self.frame.rowconfigure(0, minsize=100, weight=1)
+        self.frame.columnconfigure([0, 1, 2, 3], minsize=100, weight=1)
 
-lbl_value = tk.Label(master=window, text="0")
-lbl_value.grid(row=0, column=1)
+        self.name_label = tk.Label(master=self.frame, text=f"{self.name}")
+        self.name_label.grid(row=0, column=0)
 
-btn_increase = tk.Button(master=window, text="+", command=increase)
-btn_increase.grid(row=0, column=2, sticky="nsew")
+        self.btn_decrease = tk.Button(master=self.frame, text="-", command=self.decrease)
+        self.btn_decrease.grid(row=0, column=1, sticky="nsew")
+
+        self.label = tk.Label(master=self.frame, text="0")
+        self.label.grid(row=0, column=2)
+
+        self.btn_increase = tk.Button(master=self.frame, text="+", command=self.increase)
+        self.btn_increase.grid(row=0, column=3, sticky="nsew")
+
+        self.frame.pack()
+
+    def increase(self):
+        value = int(self.label["text"])
+        self.label["text"] = f"{value + 1}"
+
+    def decrease(self):
+        value = int(self.label["text"])
+        self.label["text"] = f"{value - 1}"
+
+SPEEDS = [1,2,4,6,8,10,20]
+
+def updateSpeed():
+    speedLabel["text"]=f"speed is {speedVariable.get()} rad/s"
+
+speedFrame = tk.Frame()
+speedFrame.rowconfigure(0, minsize=100, weight=1)
+speedFrame.columnconfigure([0, 1, 2], minsize=100, weight=1)
+speedLabel = tk.Label(master=speedFrame, text="speed (rad/s)")
+speedLabel.grid(row=0, column=0)
+
+speedVariable = tk.StringVar(speedFrame)
+speedVariable.set(SPEEDS[0])
+speedDropdown = tk.OptionMenu(speedFrame, speedVariable, *SPEEDS)
+speedDropdown.grid(row=0, column=1)
+
+speedConfirm = tk.Button(master=speedFrame, text="ok", command=updateSpeed)
+speedConfirm.grid(row=0,column=2)
+
+speedFrame.pack()
+
+motorR1 = singleMotorControl("motorR1")
+motorT1 = singleMotorControl("motorT1")
 
 window.mainloop()
