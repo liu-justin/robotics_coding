@@ -3,17 +3,15 @@ import untangle
 import numpy as np
 
 # first untagnle the xml file, then create the inputs for ch4 forward kinematics
-
 obj = untangle.parse("6DoF_URDF.xml")
-# [child["name"] for child in o.root.child]
 
-# initialize TList, bodyList 
+# initialize TList, bodyList from obj
 TList = []
 bodyList = np.array([0,0,0,0,0,0])
 
 np.set_printoptions(precision=7, suppress=True)
 
-# grabbing the last joint (ee_joint) and its xyz
+# grabbing the last joint (ee_joint) R and p, inserting into TList
 rpy_ee = [float(n) for n in obj.robot.joint[len(obj.robot.joint)-1].origin["rpy"].split()]
 R_ee = mr.RollPitchYawToRot(rpy_ee[0],rpy_ee[1],rpy_ee[2])
 p_ee = [float(n) for n in obj.robot.joint[len(obj.robot.joint)-1].origin["xyz"].split()]
@@ -22,6 +20,7 @@ T_ee = mr.RpToTrans(R_ee, p_ee)
 # skips all joints that are type fixed (like the base link and ee_link)
 joint_list = [joint for joint in obj.robot.joint if joint["type"]!="fixed"]
 
+# need to reverse jointlist to get T_joint_ee, to get bodyList properly
 for joint in reversed(joint_list):
     # find the roll-pitch-yaw, about the z-y-x axes of the previous joint ; convert to a rotation matrix
     rpy = [float(n) for n in joint.origin["rpy"].split()]
@@ -56,7 +55,7 @@ for joint in reversed(joint_list):
     # update T_ee to be relative to current link T_56 * T_6ee = T_5ee
     T_ee = np.dot(T, T_ee)
 
-# remove the filler column needed to sart appending
+# remove the filler column at initialization needed to start appending
 bodyList = np.delete(bodyList, len(bodyList[0])-1,1)
 
 ##### inverse dynamics #####
