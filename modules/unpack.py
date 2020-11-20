@@ -114,7 +114,7 @@ def unpack_XML(xml):
 
     return T_ee, T_list, body_list, G_list
 
-# use a joint trajectory to get from rest to home
+# use a joint trajectory to get from rest to home (not cartesian)
 def rest_to_home_angle_list():
 
     # initialize the theta arrays
@@ -150,3 +150,34 @@ def movement_to_angleList(M_start, theta_start, M_end, T_final, N, body_list, T_
             angle_list.append(current_solution)
 
     return angle_list
+
+def angleList_push(angle_list, total_time):
+
+    # get number of divisions to get from first angles to last angles
+    divisions = len(angle_list)
+    division_time = total_time/divisions
+
+    # get number of motors
+    num_motors = len(angle_list[0])
+
+    current_angular_velocities = np.zeros(num_motors)
+
+    # get the first angles to set up velocities
+    previous_angles = angle_list[0]
+
+    # run thru angleList without first one
+    for i in range(1, divisions):
+        # for each motor in the angleList
+        for j in range(num_motors):
+            # get the angular velocity from the previous_angles
+            angular_velocity = (angle_list[i][j] - angle_list[i-1][j])/division_time
+            
+            if not mr.NearZero(current_angular_velocities[j]-angular_velocity):
+                # send the crap
+                motors[i].pub.publish(angular_velocity)
+
+            # reset the current angular velocities
+            current_angular_velocities[j] = angular_velocity
+
+        # wait for the divisionTime (in ms)
+        window.after(division_time*1000)
